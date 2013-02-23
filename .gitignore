@@ -1,3 +1,6 @@
+node_modules/
+npm-debug.log
+
 lib-cov
 *.seed
 *.log
@@ -11,4 +14,5 @@ pids
 logs
 results
 
-npm-debug.log
+#
+.*.swp
