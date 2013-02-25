@@ -64,6 +64,25 @@ rl.on 'line', (line) ->
       pwd = to_dir
       repl()
 
+    when 'cat'
+      if args?
+        target = path.resolve(getCurrentDirectory(), args[0])[1..]
+        target = if target.length > 0 then target.split('/') else []
+        container = target[0]
+        blob = target[1..].join('/')
+        if container? and blob.length > 0
+          bs.getBlobToText container, blob, (error, text, blobResult, response) ->
+            if error?
+              console.log error.message.split('\n')[0]
+            else
+              console.log text
+            rl.prompt()
+        else
+          console.log 'The specified blob does not exist.'
+          rl.prompt()
+      else
+        rl.prompt()
+
     when 'cp'
       # TODO:
       rl.prompt()
