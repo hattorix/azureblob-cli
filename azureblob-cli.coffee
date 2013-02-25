@@ -82,13 +82,25 @@ rl.on 'line', (line) ->
             console.log c.name
           rl.prompt()
       else
+        # TODO: パラメータが指定された際の処理
         # コンテナ内では、直下のリスト
-        # TODO: 複数階層の実装
+        prefix = pwd[1..].join('/')
+        prefix = "#{prefix}/" if prefix.length > 0
         bs.listBlobs pwd[0],
           'delimiter' : '/'
-        , (error, blobs, response) ->
+          'prefix'    : prefix
+        , (error, blobs, continuation, response) ->
+          # sub directories
+          prefixes = []
+          if response.body.Blobs.BlobPrefix?
+            prefixes = response.body.Blobs.BlobPrefix
+            prefixes = [prefixes] if not Array.isArray(prefixes)
+          for subdir in prefixes
+            console.log subdir.Name[prefix.length..]
+
+          # blobs
           for b in blobs
-            console.log b.name
+            console.log b.name[prefix.length..]
           rl.prompt()
 
     when 'mv'
