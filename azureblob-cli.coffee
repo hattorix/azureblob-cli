@@ -47,39 +47,62 @@ repl = () ->
   rl.prompt()
 repl()
 
-rl.on 'line', (cmd) ->
-  switch cmd.trim()
+rl.on 'line', (line) ->
+  cmd = line.split(' ')
+
+  switch cmd[0].trim()
     when 'cd'
-      # TODO:
-      rl.prompt()
+      # TODO: 複数階層の実装
+      # TODO: 存在しない階層への移動を不許可
+      # TODO: 上位階層への移動
+      pwd.push(cmd[1])
+      repl()
+
     when 'cp'
       # TODO:
       rl.prompt()
+
     when 'quit', 'exit'
       rl.close()
+
     when 'get'
       # TODO:
       rl.prompt()
     when 'ls'
-      bs.listContainers (err, containers) ->
-        for c in containers
-          console.log c.name
-        rl.prompt()
+      if pwd.length == 0
+        # root ディレクトリでは、コンテナの一覧
+        bs.listContainers (err, containers) ->
+          for c in containers
+            console.log c.name
+          rl.prompt()
+      else
+        # コンテナ内では、直下のリスト
+        # TODO: 複数階層の実装
+        bs.listBlobs pwd[0],
+          'delimiter' : '/'
+        , (error, blobs, response) ->
+          for b in blobs
+            console.log b.name
+          rl.prompt()
 
     when 'mv'
       # TODO:
       rl.prompt()
+
     when 'put'
       # TODO:
       rl.prompt()
+
     when 'pwd'
       console.log getCurrentDirectory()
       rl.prompt()
+
     when 'rm'
       # TODO:
       rl.prompt()
+
     else
-      console.log "#{cmd}: command not found"
+      console.log "#{cmd[0]}: command not found"
       rl.prompt()
 
 rl.on 'close', () ->
