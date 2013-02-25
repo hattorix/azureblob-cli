@@ -1,6 +1,7 @@
 azure    = require 'azure'
 opts     = require 'opts'
 readline = require 'readline'
+path     = require 'path'
 
 # Parse command-line options
 options = [
@@ -48,14 +49,19 @@ repl = () ->
 repl()
 
 rl.on 'line', (line) ->
-  cmd = line.split(' ')
+  cmd = line.trim().split(' ')
+  args = cmd[1..] if cmd.length > 1
+  cmd  = cmd[0]
 
-  switch cmd[0].trim()
+  switch cmd
     when 'cd'
-      # TODO: 複数階層の実装
+      if args?
+        to_dir = path.resolve(getCurrentDirectory(), args[0])[1..]
+        to_dir = if to_dir.length > 0 then to_dir.split('/') else []
+      else
+        to_dir = []
       # TODO: 存在しない階層への移動を不許可
-      # TODO: 上位階層への移動
-      pwd.push(cmd[1])
+      pwd = to_dir
       repl()
 
     when 'cp'
@@ -102,7 +108,7 @@ rl.on 'line', (line) ->
       rl.prompt()
 
     else
-      console.log "#{cmd[0]}: command not found"
+      console.log "#{cmd}: command not found"
       rl.prompt()
 
 rl.on 'close', () ->
