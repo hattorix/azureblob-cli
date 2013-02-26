@@ -42,6 +42,14 @@ pwd = []
 getCurrentDirectory = () ->
   '/' + pwd.join('/')
 
+createPathArray = (from, to) ->
+  newpath = path.resolve(from, to)
+  pos = newpath.indexOf(path.sep)
+  if pos != -1 and pos != newpath.length - 1
+    newpath[pos+1..].split(path.sep)
+  else
+    []
+
 repl = () ->
   dir = getCurrentDirectory()
   rl.setPrompt "blob [#{dir}] > "
@@ -55,19 +63,14 @@ rl.on 'line', (line) ->
 
   switch cmd
     when 'cd'
-      if args?
-        to_dir = path.resolve(getCurrentDirectory(), args[0])[1..]
-        to_dir = if to_dir.length > 0 then to_dir.split('/') else []
-      else
-        to_dir = []
+      todir = if args? then createPathArray getCurrentDirectory(), args[0] else []
       # TODO: 存在しない階層への移動を不許可
-      pwd = to_dir
+      pwd = todir
       repl()
 
     when 'cat'
       if args?
-        target = path.resolve(getCurrentDirectory(), args[0])[1..]
-        target = if target.length > 0 then target.split('/') else []
+        target = createPathArray getCurrentDirectory(), args[0]
         container = target[0]
         blob = target[1..].join('/')
         if container? and blob.length > 0
