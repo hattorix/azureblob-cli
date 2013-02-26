@@ -24,8 +24,9 @@ if not opts.get('n') or not opts.get('k')
   process.exit()
 
 # Azure account
-process.env['AZURE_STORAGE_ACCOUNT']    = opts.get('n')
-process.env['AZURE_STORAGE_ACCESS_KEY'] = opts.get('k')
+environment = { name: opts.get('n'), key: opts.get('k') }
+process.env['AZURE_STORAGE_ACCOUNT']    = environment.name
+process.env['AZURE_STORAGE_ACCESS_KEY'] = environment.key
 
 try
   bs = azure.createBlobService()
@@ -38,9 +39,9 @@ rl = readline.createInterface
   input : process.stdin
   output: process.stdout
 
-pwd = []
+environment.pwd = []
 getCurrentDirectory = () ->
-  '/' + pwd.join('/')
+  '/' + environment.pwd.join('/')
 
 createPathArray = (from, to) ->
   newpath = path.resolve(from, to)
@@ -58,7 +59,7 @@ printServiceError = (error) ->
 
 repl = () ->
   dir = getCurrentDirectory()
-  rl.setPrompt "blob [#{dir}] > "
+  rl.setPrompt("#{environment.name} [#{dir}] > ")
   rl.prompt()
 repl()
 
@@ -71,7 +72,7 @@ rl.on 'line', (line) ->
     when 'cd'
       todir = if args? then createPathArray getCurrentDirectory(), args[0] else []
       # TODO: 存在しない階層への移動を不許可
-      pwd = todir
+      environment.pwd = todir
       repl()
       return
 
@@ -119,7 +120,7 @@ rl.on 'line', (line) ->
       return
 
     when 'ls'
-      if pwd.length == 0
+      if environment.pwd.length == 0
         # root ディレクトリでは、コンテナの一覧
         bs.listContainers (err, containers) ->
           for c in containers
@@ -128,7 +129,7 @@ rl.on 'line', (line) ->
       else
         # TODO: パラメータが指定された際の処理
         # コンテナ内では、直下のリスト
-        [container, prefix] = splitContainerAndBlob pwd
+        [container, prefix] = splitContainerAndBlob environment.pwd
         prefix = "#{prefix}/" if prefix.length > 0
         bs.listBlobs container,
           'delimiter' : '/'
