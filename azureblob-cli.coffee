@@ -119,6 +119,9 @@ rl.on 'line', (line) ->
       # TODO:
       rl.prompt()
 
+    when ''
+      rl.prompt()
+
     else
       console.log "#{cmd}: command not found"
       rl.prompt()
