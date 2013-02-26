@@ -50,6 +50,12 @@ createPathArray = (from, to) ->
   else
     []
 
+splitContainerAndBlob = (pathArray) ->
+  [pathArray[0], pathArray[1..].join('/')]
+
+printServiceError = (error) ->
+  console.log error.message.split('\n')[0]
+
 repl = () ->
   dir = getCurrentDirectory()
   rl.setPrompt "blob [#{dir}] > "
@@ -70,13 +76,12 @@ rl.on 'line', (line) ->
 
     when 'cat'
       if args?
-        target = createPathArray getCurrentDirectory(), args[0]
-        container = target[0]
-        blob = target[1..].join('/')
+        [container, blob] =
+          splitContainerAndBlob createPathArray(getCurrentDirectory(), args[0])
         if container? and blob.length > 0
           bs.getBlobToText container, blob, (error, text, blobResult, response) ->
             if error?
-              console.log error.message.split('\n')[0]
+              printServiceError error
             else
               console.log text
             rl.prompt()
@@ -106,12 +111,18 @@ rl.on 'line', (line) ->
       else
         # TODO: パラメータが指定された際の処理
         # コンテナ内では、直下のリスト
-        prefix = pwd[1..].join('/')
+        [container, prefix] = splitContainerAndBlob pwd
         prefix = "#{prefix}/" if prefix.length > 0
-        bs.listBlobs pwd[0],
+        bs.listBlobs container,
           'delimiter' : '/'
           'prefix'    : prefix
         , (error, blobs, continuation, response) ->
+          # error handling
+          if error?
+            printServiceError error
+            rl.prompt()
+            return
+
           # sub directories
           prefixes = []
           if response.body.Blobs.BlobPrefix?
