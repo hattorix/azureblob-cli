@@ -102,8 +102,22 @@ rl.on 'line', (line) ->
       return
 
     when 'get'
-      # TODO:
-      break
+      if args?.length != 1 and args?.length != 2
+        break
+
+      [container, blob] =
+        splitContainerAndBlob createPathArray(getCurrentDirectory(), args[0])
+      if not container? or blob.length == 0
+        console.log 'The specified blob does not exist.'
+        break
+
+      fname = args[1] ? path.basename(blob)
+      bs.getBlobToFile container, blob, fname, (error, responseBlob, response) ->
+        if error?
+          printServiceError error
+        rl.prompt()
+      return
+
     when 'ls'
       if pwd.length == 0
         # root ディレクトリでは、コンテナの一覧
