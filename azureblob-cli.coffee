@@ -73,34 +73,37 @@ rl.on 'line', (line) ->
       # TODO: 存在しない階層への移動を不許可
       pwd = todir
       repl()
+      return
 
     when 'cat'
-      if args?
-        [container, blob] =
-          splitContainerAndBlob createPathArray(getCurrentDirectory(), args[0])
-        if container? and blob.length > 0
-          bs.getBlobToText container, blob, (error, text, blobResult, response) ->
-            if error?
-              printServiceError error
-            else
-              console.log text
-            rl.prompt()
+      if not args?
+        break
+
+      [container, blob] =
+        splitContainerAndBlob createPathArray(getCurrentDirectory(), args[0])
+      if not container? or blob.length == 0
+        console.log 'The specified blob does not exist.'
+        break
+
+      bs.getBlobToText container, blob, (error, text, blobResult, response) ->
+        if error?
+          printServiceError error
         else
-          console.log 'The specified blob does not exist.'
-          rl.prompt()
-      else
+          console.log text
         rl.prompt()
+      return
 
     when 'cp'
       # TODO:
-      rl.prompt()
+      break
 
     when 'quit', 'exit'
       rl.close()
+      return
 
     when 'get'
       # TODO:
-      rl.prompt()
+      break
     when 'ls'
       if pwd.length == 0
         # root ディレクトリでは、コンテナの一覧
@@ -120,44 +123,45 @@ rl.on 'line', (line) ->
           # error handling
           if error?
             printServiceError error
-            rl.prompt()
-            return
 
-          # sub directories
-          prefixes = []
-          if response.body.Blobs.BlobPrefix?
-            prefixes = response.body.Blobs.BlobPrefix
-            prefixes = [prefixes] if not Array.isArray(prefixes)
-          for subdir in prefixes
-            console.log subdir.Name[prefix.length..]
+          else
+            # sub directories
+            prefixes = []
+            if response.body.Blobs.BlobPrefix?
+              prefixes = response.body.Blobs.BlobPrefix
+              prefixes = [prefixes] if not Array.isArray(prefixes)
+            for subdir in prefixes
+              console.log subdir.Name[prefix.length..]
 
-          # blobs
-          for b in blobs
-            console.log b.name[prefix.length..]
+            # blobs
+            for b in blobs
+              console.log b.name[prefix.length..]
           rl.prompt()
+      return
 
     when 'mv'
       # TODO:
-      rl.prompt()
+      break
 
     when 'put'
       # TODO:
-      rl.prompt()
+      break
 
     when 'pwd'
       console.log getCurrentDirectory()
-      rl.prompt()
 
     when 'rm'
       # TODO:
-      rl.prompt()
+      break
 
     when ''
-      rl.prompt()
+      break
 
     else
       console.log "#{cmd}: command not found"
-      rl.prompt()
+
+  # finish command
+  rl.prompt()
 
 rl.on 'close', () ->
   process.exit 0
