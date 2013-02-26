@@ -123,7 +123,7 @@ rl.on 'line', (line) ->
         # root ディレクトリでは、コンテナの一覧
         bs.listContainers (err, containers) ->
           for c in containers
-            console.log c.name
+            console.log "#{c.name}/"
           rl.prompt()
       else
         # TODO: パラメータが指定された際の処理
