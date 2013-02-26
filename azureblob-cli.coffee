@@ -63,7 +63,7 @@ repl = () ->
 repl()
 
 rl.on 'line', (line) ->
-  cmd = line.trim().split(' ')
+  cmd = line.trim().split(/\s+/)
   args = cmd[1..] if cmd.length > 1
   cmd  = cmd[0]
 
