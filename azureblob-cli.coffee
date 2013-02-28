@@ -65,19 +65,19 @@ repl()
 
 rl.on 'line', (line) ->
   cmd = line.trim().split(/\s+/)
-  args = cmd[1..] if cmd.length > 1
+  args = cmd[1..]
   cmd  = cmd[0]
 
   switch cmd
     when 'cd'
-      todir = if args? then createPathArray getCurrentDirectory(), args[0] else []
+      todir = if args[0]? then createPathArray getCurrentDirectory(), args[0] else []
       # TODO: 存在しない階層への移動を不許可
       environment.pwd = todir
       repl()
       return
 
     when 'cat'
-      if not args?
+      if args.length < 1
         break
 
       [container, blob] =
@@ -103,7 +103,7 @@ rl.on 'line', (line) ->
       return
 
     when 'get'
-      if args?.length != 1 and args?.length != 2
+      if args.length != 1 and args.length != 2
         break
 
       [container, blob] =
@@ -120,7 +120,10 @@ rl.on 'line', (line) ->
       return
 
     when 'ls'
-      if environment.pwd.length == 0
+      [container, prefix] =
+        splitContainerAndBlob createPathArray(getCurrentDirectory(), args[0])
+
+      if not container?
         # root ディレクトリでは、コンテナの一覧
         bs.listContainers (err, containers) ->
           for c in containers
