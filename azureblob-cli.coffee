@@ -120,8 +120,11 @@ rl.on 'line', (line) ->
       return
 
     when 'ls'
+      # TODO: multiple arguments
       [container, prefix] =
         splitContainerAndBlob createPathArray(getCurrentDirectory(), args[0])
+      if args[0]? and prefix.length > 1 and args[0].slice(-1) == '/'
+        prefix = "#{prefix}/"
 
       if not container?
         # root ディレクトリでは、コンテナの一覧
@@ -130,31 +133,48 @@ rl.on 'line', (line) ->
             console.log "#{c.name}/"
           rl.prompt()
       else
-        # TODO: パラメータが指定された際の処理
-        # コンテナ内では、直下のリスト
-        [container, prefix] = splitContainerAndBlob environment.pwd
-        prefix = "#{prefix}/" if prefix.length > 0
-        bs.listBlobs container,
-          'delimiter' : '/'
-          'prefix'    : prefix
-        , (error, blobs, continuation, response) ->
+        listCallback = (error, blobs, continuation, response) ->
           # error handling
           if error?
             printServiceError error
 
           else
+            items = []
+
             # sub directories
             prefixes = []
             if response.body.Blobs.BlobPrefix?
               prefixes = response.body.Blobs.BlobPrefix
               prefixes = [prefixes] if not Array.isArray(prefixes)
             for subdir in prefixes
-              console.log subdir.Name[prefix.length..]
+              if subdir.Name == "#{prefix}/"
+                # If you find a directory of the same name,
+                # to recurse into subdirectories
+                prefix = "#{prefix}/"
+                bs.listBlobs container,
+                  'delimiter' : '/'
+                  'prefix'    : prefix
+                , listCallback
+                return
+              items.push subdir.Name[prefix.length..]
 
             # blobs
             for b in blobs
-              console.log b.name[prefix.length..]
+              pos = b.name.lastIndexOf('/')
+              if pos == -1
+                items.push b.name
+              else
+                items.push b.name[pos+1..]
+
+            # print
+            console.log i for i in items
+
           rl.prompt()
+
+        bs.listBlobs container,
+          'delimiter' : '/'
+          'prefix'    : prefix
+        , listCallback
       return
 
     when 'mv'
