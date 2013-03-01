@@ -57,6 +57,10 @@ splitContainerAndBlob = (pathArray) ->
 printServiceError = (error) ->
   console.log error.message.split('\n')[0]
 
+parseCommandLine = (line) ->
+  cmd = line.trim().split(/\s+/)
+  [cmd[0], cmd[1..]]
+
 repl = () ->
   dir = getCurrentDirectory()
   rl.setPrompt("#{environment.name} [#{dir}] > ")
@@ -64,9 +68,7 @@ repl = () ->
 repl()
 
 rl.on 'line', (line) ->
-  cmd = line.trim().split(/\s+/)
-  args = cmd[1..]
-  cmd  = cmd[0]
+  [cmd, args] = parseCommandLine line
 
   switch cmd
     when 'cd'
