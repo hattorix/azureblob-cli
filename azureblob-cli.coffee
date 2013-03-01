@@ -123,7 +123,8 @@ rl.on 'line', (line) ->
       # TODO: multiple arguments
       [container, prefix] =
         splitContainerAndBlob createPathArray(getCurrentDirectory(), args[0])
-      if args[0]? and prefix.length > 1 and args[0].slice(-1) == '/'
+      if (not args[0]? and prefix.length > 1) or
+         (args[0]? and prefix.length > 1 and args[0].slice(-1) == '/')
         prefix = "#{prefix}/"
 
       if not container?
