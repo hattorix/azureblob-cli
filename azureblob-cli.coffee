@@ -127,55 +127,10 @@ rl.on 'line', (line) ->
          (args[0]? and prefix.length > 1 and args[0].slice(-1) == '/')
         prefix = "#{prefix}/"
 
-      if not container?
-        # root ディレクトリでは、コンテナの一覧
-        bs.listContainers (err, containers) ->
-          for c in containers
-            console.log "#{c.name}/"
-          rl.prompt()
-      else
-        listCallback = (error, blobs, continuation, response) ->
-          # error handling
-          if error?
-            printServiceError error
-
-          else
-            items = []
-
-            # sub directories
-            prefixes = []
-            if response.body.Blobs.BlobPrefix?
-              prefixes = response.body.Blobs.BlobPrefix
-              prefixes = [prefixes] if not Array.isArray(prefixes)
-            for subdir in prefixes
-              if subdir.Name == "#{prefix}/"
-                # If you find a directory of the same name,
-                # to recurse into subdirectories
-                prefix = "#{prefix}/"
-                bs.listBlobs container,
-                  'delimiter' : '/'
-                  'prefix'    : prefix
-                , listCallback
-                return
-              items.push subdir.Name[prefix.length..]
-
-            # blobs
-            for b in blobs
-              pos = b.name.lastIndexOf('/')
-              if pos == -1
-                items.push b.name
-              else
-                items.push b.name[pos+1..]
-
-            # print
-            console.log i for i in items
-
-          rl.prompt()
-
-        bs.listBlobs container,
-          'delimiter' : '/'
-          'prefix'    : prefix
-        , listCallback
+      listDirectory container, prefix, (items) ->
+        if items?
+          console.log i for i in items
+        rl.prompt()
       return
 
     when 'mv'
@@ -204,3 +159,54 @@ rl.on 'line', (line) ->
 
 rl.on 'close', () ->
   process.exit 0
+
+# List the blobs in a container
+listDirectory = (container, prefix, callback) ->
+  listBlobsCallback = (error, blobs, continuation, response) ->
+    # error handling
+    if error?
+      printServiceError error
+
+    else
+      items = []
+
+      # sub directories
+      prefixes = []
+      if response.body.Blobs.BlobPrefix?
+        prefixes = response.body.Blobs.BlobPrefix
+        prefixes = [prefixes] if not Array.isArray(prefixes)
+      for subdir in prefixes
+        if subdir.Name == "#{prefix}/"
+          # If you find a directory of the same name,
+          # to recurse into subdirectories
+          prefix = "#{prefix}/"
+          bs.listBlobs container,
+            'delimiter' : '/'
+            'prefix'    : prefix
+          , listBlobsCallback
+          return
+        items.push subdir.Name[prefix.length..]
+
+      # blobs
+      for b in blobs
+        pos = b.name.lastIndexOf('/')
+        if pos == -1
+          items.push b.name
+        else
+          items.push b.name[pos+1..]
+
+    callback items
+
+  if not container?
+    # In the root directory, a list of container
+    bs.listContainers (err, containers) ->
+      if error?
+        printServiceError err
+      else
+        callback ("#{c.name}/" for c in containers)
+  else
+    # Lists the blob in the container
+    bs.listBlobs container,
+      'delimiter' : '/'
+      'prefix'    : prefix
+    , listBlobsCallback
