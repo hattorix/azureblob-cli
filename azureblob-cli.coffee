@@ -47,6 +47,7 @@ getCurrentDirectory = () ->
   '/' + environment.pwd.join('/')
 
 createPathArray = (from, to) ->
+  to = to ? ''
   newpath = path.resolve(from, to)
   pos = newpath.indexOf(path.sep)
   if pos != -1 and pos != newpath.length - 1
