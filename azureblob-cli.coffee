@@ -19,12 +19,15 @@ options = [
 opts.parse options, true
 
 # need parameter
-if not opts.get('n') or not opts.get('k')
+if (not opts.get('n') and not process.env['AZURE_STORAGE_ACCOUNT']?) or (not opts.get('k') and not process.env['AZURE_STORAGE_ACCESS_KEY']?)
   console.log '-n <Account name> -k <Account key>'
   process.exit()
 
 # Azure account
-environment = { name: opts.get('n'), key: opts.get('k') }
+environment =
+  name : if opts.get('n') then opts.get('n') else process.env['AZURE_STORAGE_ACCOUNT']
+  key  : if opts.get('k') then opts.get('k') else process.env['AZURE_STORAGE_ACCESS_KEY']
+
 process.env['AZURE_STORAGE_ACCOUNT']    = environment.name
 process.env['AZURE_STORAGE_ACCESS_KEY'] = environment.key
 
