@@ -177,8 +177,8 @@ listDirectory = (container, prefix, callback) ->
 
       # sub directories
       prefixes = []
-      if response.body.Blobs.BlobPrefix?
-        prefixes = response.body.Blobs.BlobPrefix
+      if response.body.EnumerationResults.Blobs.BlobPrefix?
+        prefixes = response.body.EnumerationResults.Blobs.BlobPrefix
         prefixes = [prefixes] if not Array.isArray(prefixes)
       for subdir in prefixes
         if subdir.Name == "#{prefix}/"
