@@ -38,10 +38,6 @@ catch e
   process.exit 1
 
 # REPL
-rl = readline.createInterface
-  input : process.stdin
-  output: process.stdout
-
 environment.pwd = []
 getCurrentDirectory = () ->
   '/' + environment.pwd.join('/')
@@ -64,6 +60,31 @@ printServiceError = (error) ->
 parseCommandLine = (line) ->
   cmd = line.trim().split(/\s+/)
   [cmd[0], cmd[1..]]
+
+completer = (line, callback) ->
+  [cmd, args] = parseCommandLine line
+
+  [container, prefix] =
+    splitContainerAndBlob createPathArray(getCurrentDirectory(), args[0])
+  if (not args[0]? and prefix.length > 1) or
+     (args[0]? and prefix.length > 1 and args[0].slice(-1) == '/')
+    prefix = "#{prefix}/"
+
+  listDirectory container, prefix, (items) ->
+    if not items? and prefix.length == 0
+      # Retry: target complement the container
+      listDirectory null, null, (items2) ->
+        match = []
+        for i in items2
+          match.push i if i.lastIndexOf(container, 0) == 0
+        callback(null, [match, container])
+    else
+      callback(null, [items, line])
+
+rl = readline.createInterface
+  input    : process.stdin
+  output   : process.stdout
+  completer: completer
 
 repl = () ->
   dir = getCurrentDirectory()
@@ -212,7 +233,10 @@ listDirectory = (container, prefix, callback) ->
         callback ("#{c.name}/" for c in containers)
   else
     # Lists the blob in the container
-    bs.listBlobs container,
-      'delimiter' : '/'
-      'prefix'    : prefix
-    , listBlobsCallback
+    try
+      bs.listBlobs container,
+        'delimiter' : '/'
+        'prefix'    : prefix
+      , listBlobsCallback
+    catch error
+      callback()
